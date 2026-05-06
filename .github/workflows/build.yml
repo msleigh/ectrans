@@ -162,7 +162,7 @@ jobs:
 
     - name: Inspect NVHPC compiler
       if: contains( matrix.compiler, 'nvhpc' )
-      shell: bash -eux {0}
+      shell: bash -ux {0}
       run: |
         uname -a
         nvfortran --version
