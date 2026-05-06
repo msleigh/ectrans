@@ -162,11 +162,18 @@ jobs:
 
     - name: Inspect NVHPC compiler
       if: contains( matrix.compiler, 'nvhpc' )
-      shell: bash -ux {0}
+      shell: bash -x {0}
       run: |
         uname -a
         nvfortran --version
-        printf 'program p\n  print *, "hi"\nend program\n' | nvfortran  -fast -O3 -# -x F90 -Mfree /dev/stdin 2>&1
+        cat > hello.F90 <<'EOF'
+        program p
+        print *, "hi"
+        end program
+        EOF
+        nvfortran -fast -O3 -# hello.F90 -o hello
+        ./hello
+
 
     - name: Download Intel compiler
       if: contains( matrix.compiler, 'intel' )
