@@ -160,6 +160,14 @@ jobs:
         echo "${NVHPC_DIR}/compilers/bin"                   >> $GITHUB_PATH
         [ -z ${MPI_HOME+x} ] || echo "MPI_HOME=${MPI_HOME}" >> $GITHUB_ENV
 
+    - name: Inspect NVHPC compiler
+      if: contains( matrix.compiler, 'nvhpc' )
+      shell: bash -eux {0}
+      run: |
+        uname -a
+        nvfortran --version
+        printf 'program p\n  print *, "hi"\nend program\n' | nvfortran  -fast -O3 -# -x F90 -Mfree /dev/stdin 2>&1
+
     - name: Download Intel compiler
       if: contains( matrix.compiler, 'intel' )
       run: |
