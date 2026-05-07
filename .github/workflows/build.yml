@@ -176,8 +176,8 @@ jobs:
         EOF
         nvfortran -fast -O3 -# test_nvfortran.F90 -o test_nvfortran 2>&1 | tee test_nvfortran.log
         ./test_nvfortran
-        grep "avx512" test_nvfortran.log && echo "AVX-512 enabled"
         rm test_nvfortran*
+        sed '/^$/q' /proc/cpuinfo # print first processor info to check architecture
 
     - name: Download Intel compiler
       if: contains( matrix.compiler, 'intel' )
