@@ -66,7 +66,12 @@ jobs:
             compiler_cc: nvc
             compiler_cxx: nvc++
             compiler_fc: nvfortran
-            cmake_options: -DCMAKE_CXX_FLAGS=--diag_suppress177 -DBLA_VENDOR=Generic
+            cmake_options: >-
+              -DBLA_VENDOR=Generic
+              -DCMAKE_CXX_FLAGS=--diag_suppress177
+              -DCMAKE_Fortran_FLAGS=-mno-avx512f
+            # The -mno-avx512f flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
+            # It seems the compiler detects AVX-512 support on some of the runners, but it seems to be faulty.
             ctest_options: -E memory
             caching: false
 
@@ -160,20 +165,19 @@ jobs:
         echo "${NVHPC_DIR}/compilers/bin"                   >> $GITHUB_PATH
         [ -z ${MPI_HOME+x} ] || echo "MPI_HOME=${MPI_HOME}" >> $GITHUB_ENV
 
-    - name: Inspect NVHPC compiler
+    - name: Inspect NVHPC Fortran compiler
       if: contains( matrix.compiler, 'nvhpc' )
-      shell: bash -x {0}
+      shell: bash -eux -o pipefail {0}
       run: |
         uname -a
         nvfortran --version
-        cat > hello.F90 <<'EOF'
-        program p
-        print *, "hi"
-        end program
+        cat > test_nvfortran.F90 <<'EOF'
+        program p; print *, "Test nvfortran"; end program
         EOF
-        nvfortran -fast -O3 -# hello.F90 -o hello
-        ./hello
-
+        nvfortran -fast -O3 -# test_nvfortran.F90 -o test_nvfortran 2>&1 | tee test_nvfortran.log
+        ./test_nvfortran
+        grep "avx512" test_nvfortran.log && echo "AVX-512 enabled"
+        rm test_nvfortran*
 
     - name: Download Intel compiler
       if: contains( matrix.compiler, 'intel' )
