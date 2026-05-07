@@ -68,11 +68,12 @@ jobs:
             compiler_fc: nvfortran
             cmake_options: >-
               -DBLA_VENDOR=Generic
-              -DCMAKE_CXX_FLAGS="--diag_suppress177 -mno-avx512f"
-              -DCMAKE_C_FLAGS=-mno-avx512f
-              -DCMAKE_Fortran_FLAGS=-mno-avx512f
-            # The -mno-avx512f flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
-            # It seems the compiler detects AVX-512 support on some of the runners, but it seems to be faulty.
+              -DCMAKE_CXX_FLAGS="--diag_suppress177 -tp=haswell"
+              -DCMAKE_C_FLAGS=-tp=haswell
+              -DCMAKE_Fortran_FLAGS=-tp=haswell
+            # The -tp=haswell flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
+            # It seems the compiler detects an incompatible target processor on some of the runners,
+            # in particular -tp=znver4 seems incompatible with "AMD EPYC 9V74 80-Core Processor" as shown by /proc/cpuinfo
             ctest_options: -E memory
             caching: false
 
