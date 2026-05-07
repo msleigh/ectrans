@@ -68,7 +68,8 @@ jobs:
             compiler_fc: nvfortran
             cmake_options: >-
               -DBLA_VENDOR=Generic
-              -DCMAKE_CXX_FLAGS=--diag_suppress177
+              -DCMAKE_CXX_FLAGS="--diag_suppress177 -mno-avx512f"
+              -DCMAKE_C_FLAGS=-mno-avx512f
               -DCMAKE_Fortran_FLAGS=-mno-avx512f
             # The -mno-avx512f flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
             # It seems the compiler detects AVX-512 support on some of the runners, but it seems to be faulty.
@@ -165,7 +166,7 @@ jobs:
         echo "${NVHPC_DIR}/compilers/bin"                   >> $GITHUB_PATH
         [ -z ${MPI_HOME+x} ] || echo "MPI_HOME=${MPI_HOME}" >> $GITHUB_ENV
 
-    - name: Inspect NVHPC Fortran compiler
+    - name: Inspect system and NVHPC compiler verbose output
       if: contains( matrix.compiler, 'nvhpc' )
       shell: bash -eux -o pipefail {0}
       run: |
@@ -246,7 +247,7 @@ jobs:
           ecmwf-ifs/fiat
         dependency_branch: develop
         dependency_cmake_options: |
-          ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_MPI=ON"
+          ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_TESTS=OFF -DENABLE_MPI=ON"
         cmake_options:    "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_FFTW=ON -DENABLE_ETRANS=ON -DENABLE_MKL=OFF"
         ctest_options: "${{ matrix.ctest_options }}"
 
