@@ -169,21 +169,6 @@ jobs:
         source /opt/nvhpc/env.sh
         echo "${NVHPC_DIR}/compilers/bin"                   >> $GITHUB_PATH
         [ -z ${MPI_HOME+x} ] || echo "MPI_HOME=${MPI_HOME}" >> $GITHUB_ENV
-
-    - name: Inspect system and NVHPC compiler verbose output
-      if: contains( matrix.compiler, 'nvhpc' )
-      shell: bash -eux -o pipefail {0}
-      run: |
-        uname -a
-        nvfortran --version
-        cat > test_nvfortran.F90 <<'EOF'
-        program p; print *, "Test nvfortran"; end program
-        EOF
-        nvfortran -fast -O3 -# test_nvfortran.F90 -o test_nvfortran 2>&1 | tee test_nvfortran.log
-        ./test_nvfortran
-        rm test_nvfortran*
-        sed '/^$/q' /proc/cpuinfo # print first processor info to check architecture
-
     - name: Download Intel compiler
       if: contains( matrix.compiler, 'intel' )
       run: |
@@ -197,7 +182,7 @@ jobs:
       run: |
         version=2023.2.0
         sudo apt-get update
-         sudo apt-get install \
+        sudo apt-get install \
           intel-oneapi-compiler-fortran-$version \
           intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic-$version
         source /opt/intel/oneapi/setvars.sh
@@ -238,15 +223,24 @@ jobs:
         [ -z ${MPI_HOME+x} ] || echo "${MPI_HOME}/bin" >> $GITHUB_PATH
 
         if [[ "${{ matrix.compiler }}" =~ "nvhpc" ]]; then
-          echo "CFLAGS=-tp=haswell"   >> $GITHUB_ENV
-          echo "CXXFLAGS=-tp=haswell" >> $GITHUB_ENV
-          echo "FFLAGS=-tp=haswell"   >> $GITHUB_ENV
-          echo "FCFLAGS=-tp=haswell"  >> $GITHUB_ENV
-          # The -tp=haswell flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
+          # Add a -tp=haswell flag, which is needed to avoid nvfortran errors of "Error during math dispatching processing..."
           # It seems the compiler detects an incompatible target processor on some of the runners,
           # in particular -tp=znver4 seems incompatible with "AMD EPYC 9V74 80-Core Processor" as shown by /proc/cpuinfo
           # For Intel oneAPI, we need to set the MKLROOT environment variable for cmake to find MKL
+          NVHPC_TARGET_FLAG="-tp=haswell"
+          CFLAGS="${CFLAGS:+$CFLAGS }${NVHPC_TARGET_FLAG}"
+          CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }${NVHPC_TARGET_FLAG}"
+          FFLAGS="${FFLAGS:+$FFLAGS }${NVHPC_TARGET_FLAG}"
+          FCFLAGS="${FCFLAGS:+$FCFLAGS }${NVHPC_TARGET_FLAG}"
+
+          # supress "warning #177: variable x was declared but never referenced
+          CXXFLAGS="${CXXFLAGS} --diag_suppress=177"
         fi
+
+        [ -z ${CFLAGS+x}   ] || echo "CFLAGS=${CFLAGS}"     >> $GITHUB_ENV
+        [ -z ${CXXFLAGS+x} ] || echo "CXXFLAGS=${CXXFLAGS}" >> $GITHUB_ENV
+        [ -z ${FFLAGS+x}   ] || echo "FFLAGS=${FFLAGS}"     >> $GITHUB_ENV
+        [ -z ${FCFLAGS+x}  ] || echo "FCFLAGS=${FCFLAGS}"   >> $GITHUB_ENV
 
     - name: Build & Test
       id: build-test
