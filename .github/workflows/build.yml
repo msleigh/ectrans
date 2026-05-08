@@ -68,7 +68,7 @@ jobs:
             compiler_fc: nvfortran
             cmake_options: >-
               -DBLA_VENDOR=Generic
-              -DCMAKE_CXX_FLAGS="--diag_suppress177 -tp=haswell"
+              "-DCMAKE_CXX_FLAGS=--diag_suppress177 -tp=haswell"
               -DCMAKE_C_FLAGS=-tp=haswell
               -DCMAKE_Fortran_FLAGS=-tp=haswell
             # The -tp=haswell flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
