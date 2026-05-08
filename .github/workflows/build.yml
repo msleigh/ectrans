@@ -169,13 +169,6 @@ jobs:
         source /opt/nvhpc/env.sh
         echo "${NVHPC_DIR}/compilers/bin"                   >> $GITHUB_PATH
         [ -z ${MPI_HOME+x} ] || echo "MPI_HOME=${MPI_HOME}" >> $GITHUB_ENV
-        echo "CFLAGS=-tp=haswell"   >> $GITHUB_ENV
-        echo "CXXFLAGS=-tp=haswell" >> $GITHUB_ENV
-        echo "FFLAGS=-tp=haswell"   >> $GITHUB_ENV
-        echo "FCFLAGS=-tp=haswell"  >> $GITHUB_ENV
-        # The -tp=haswell flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
-        # It seems the compiler detects an incompatible target processor on some of the runners,
-        # in particular -tp=znver4 seems incompatible with "AMD EPYC 9V74 80-Core Processor" as shown by /proc/cpuinfo
 
     - name: Inspect system and NVHPC compiler verbose output
       if: contains( matrix.compiler, 'nvhpc' )
@@ -244,6 +237,16 @@ jobs:
         # Add mpirun to path for testing
         [ -z ${MPI_HOME+x} ] || echo "${MPI_HOME}/bin" >> $GITHUB_PATH
 
+        if [[ "${{ matrix.compiler }}" =~ "nvhpc" ]]; then
+          echo "CFLAGS=-tp=haswell"   >> $GITHUB_ENV
+          echo "CXXFLAGS=-tp=haswell" >> $GITHUB_ENV
+          echo "FFLAGS=-tp=haswell"   >> $GITHUB_ENV
+          echo "FCFLAGS=-tp=haswell"  >> $GITHUB_ENV
+          # The -tp=haswell flag is needed to avoid nvfortran errors of "Error during math dispatching processing..."
+          # It seems the compiler detects an incompatible target processor on some of the runners,
+          # in particular -tp=znver4 seems incompatible with "AMD EPYC 9V74 80-Core Processor" as shown by /proc/cpuinfo
+          # For Intel oneAPI, we need to set the MKLROOT environment variable for cmake to find MKL
+        fi
 
     - name: Build & Test
       id: build-test
